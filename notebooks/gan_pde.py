@@ -13,12 +13,12 @@ import pandas as pd
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
-def plot_cut_test(grid_spec, x, actual, pred, cut=0.25, x_lim=[-1.1,1.1], y_lim=[-1.1,1.1]):
+def plot_cut_test(grid_spec, x, actual, pred, cut=0.25, x_lim=[-1.1,1.1], y_lim=[-1.1,1.1], ylabel='$u(t,x)$'):
         ax = plt.subplot(grid_spec)
         ax.plot(x, actual[cut,:], 'b-', linewidth = 2, label = 'actual', alpha=0.7)       
         ax.plot(x, pred[cut,:], 'r--', linewidth = 1, label = 'pred')
         ax.set_xlabel('$x$')
-        ax.set_ylabel('$u(t,x)$')    
+        ax.set_ylabel(ylabel)
         ax.set_title('$t = 0.' + str(cut) + '$', fontsize = 10) #TODO hardocoded int cut with t decimal
         ax.axis('square')
         ax.set_xlim(x_lim)
@@ -41,7 +41,21 @@ def net_pde_res_burger(u, x, t):
     u_t = tf.gradients(u, t)[0]
     u_x = tf.gradients(u, x)[0]
     u_xx = tf.gradients(u_x, x)[0]
-    f = u_t + u*u_x - nu*u_xx
+    f = u_t + u * u_x - nu * u_xx
+    return f
+
+def net_pde_res_buckley(u, x, t):
+    u_t = tf.gradients(u, t)[0]
+    u_x = tf.gradients(u, x)[0]
+    u_xx = tf.gradients(u_x, x)[0]
+    Swc = 0.0
+    M = 2
+    Sor = 0.0
+    nu = 0.001
+    frac = tf.divide(tf.square(u-Swc), tf.square(u-Swc) + tf.divide(tf.square(1 - u - Sor), M))
+    frac_u = tf.gradients(frac,u)[0]
+    f = u_t + frac_u * u_x - nu * u_xx
+    f = tf.identity(f, name='f_pred')
     return f
 
 def net_pde_res_simple(u, x):
